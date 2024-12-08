@@ -15,22 +15,25 @@ from threading import Thread
 # Initialize the pyttsx3 engine for speech
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[1].id)  # Set to a male voice
+
+for i, voice in enumerate(voices):
+    print(f"Voice {i}: {voice.name}")
+
+    engine.setProperty('voice', voices[1].id)
 
 def wish():
     hour = int(datetime.datetime.now().hour)
     if (hour >= 0 and hour < 12):
-        response = "Good morning"
+        speak("Good morning")
     elif (hour >= 12 and hour < 18):
-        response = "Good afternoon"
+        speak("Good afternoon")
     else:
-        response = "Good evening"
-    
-    response += " How can I help you?"
-    update_gui(response)  # Display text in the GUI
-    speak_once(response)
+        speak("Good evening")
+    speak("How can I help you?")
 
-def speak_once(audio):
+
+
+def speak(audio):
     engine.say(audio)
     engine.runAndWait()
 
@@ -50,17 +53,11 @@ def takecommand():
 
 # Handle query-based actions
 def handle_query(query):
-    response = ""
-    
     if 'wikipedia' in query:
-        response = "Searching Wikipedia..."
-        update_gui(response)  # Display text in the GUI
-        speak_once(response)  # Speak the response once
+        speak("Searching Wikipedia...")
         query = query.replace("wikipedia", "")
         results = wikipedia.summary(query, sentences=2)
-        response = f"According to Wikipedia: {results}"
-        update_gui(response)  # Display text in the GUI
-        speak_once(response)  # Speak the response once
+        speak(f"According to Wikipedia: {results}")
 
     elif 'open' in query:
         websites = {
@@ -68,17 +65,16 @@ def handle_query(query):
             "google": "https://google.com",
             "wikipedia": "https://wikipedia.com",
             "lead code": "https://leetcode.com",
-            "geek for geek": "https://www.geeksforgeeks.org",
+            "greek for greek": "https://www.geeksforgeeks.org",
             "stack overflow": "https://stackoverflow.com",
             "chat gpt":"https://chatgpt.com"
         }
         for site, url in websites.items():
             if f"open {site}" in query:
-                response = f"Opening {site}..."
-                update_gui(response)  # Display text in the GUI
-                speak_once(response)  # Speak the response once
+                speak(f"Opening {site}...")
                 webbrowser.open(url)
-
+    
+    
         apps=[["vs code","C:\\Users\\Dell\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe"],
               ["brave","C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Brave.lnk"],
               ["whatsapp","C:\\Users\\Dell\\Desktop\\WhatsApp.lnk"],
@@ -86,40 +82,25 @@ def handle_query(query):
               ["calculator","C:\\Users\\Dell\\Desktop\\Calculator.lnk"]]
         for app in apps:
             if(f"open {app[0]}".lower() in query.lower()):
-                response = f"Opening {app[0]}..."
-                update_gui(response)  # Display text in the GUI
-                speak_once(response)  # Speak the response once
+                speak(f"opening {app[0]} ...")
                 codepath=app[1]
                 os.startfile(codepath) 
 
     elif 'time' in query:
         time = datetime.datetime.now().strftime("%H:%M:%S")
-        response = f"The time is {time}"
-        update_gui(response)  # Display text in the GUI
-        speak_once(response)  # Speak the response once
+        speak(f"The time is {time}")
 
     elif 'increase volume' in query:
         pyautogui.press('volumeup')
-        response = "Increasing volume"
-        update_gui(response)  # Display text in the GUI
-        speak_once(response)  # Speak the response once
 
     elif 'decrease volume' in query:
         pyautogui.press('volumedown')
-        response = "Decreasing volume"
-        update_gui(response)  # Display text in the GUI
-        speak_once(response)  # Speak the response once
 
     elif 'mute volume' in query:
         pyautogui.press('volumemute')
-        response = "Muting volume"
-        update_gui(response)  # Display text in the GUI
-        speak_once(response)  # Speak the response once
 
     elif 'temperature' in query:
-        temp = get_temperature()
-        update_gui(temp)  # Display text in the GUI
-        speak_once(temp)  # Speak the response once
+        speak(get_temperature())
 
 def get_temperature():
     try:
@@ -140,42 +121,29 @@ def listen():
 
 # Start listening in a background thread
 def start_listening_thread():
-    global listening_thread
-    listening_thread = Thread(target=listen)
-    listening_thread.daemon = True
-    listening_thread.start()
-
-# Stop the listening thread
-def stop_listening_thread():
-    global listening_thread
-    if listening_thread.is_alive():
-        listening_thread._stop()  # Forcefully stop the listening thread
+    thread = Thread(target=listen)
+    thread.daemon = True
+    thread.start()
 
 # GUI Setup
 def update_gui(response):
     text_output.delete(1.0, tk.END)
     text_output.insert(tk.END, response)
+    speak(response)
 
 # Create the main application window
 root = tk.Tk()
 root.title("Virtual Assistant")
 root.geometry("600x400")
 
-# Set a simple background color for the window
-root.configure(bg='lightblue')  # You can change 'lightblue' to any color you like
-
-label = tk.Label(root, text="Click to Start Listening", font=("Arial", 16), bg='lightblue')
+label = tk.Label(root, text="Click to Start Listening", font=("Arial", 16))
 label.pack(pady=20)
 
-text_output = tk.Text(root, height=10, width=70, wrap=tk.WORD, bg='white')
+text_output = tk.Text(root, height=10, width=70, wrap=tk.WORD)
 text_output.pack(pady=10)
 
 listen_button = tk.Button(root, text="Start Listening", font=("Arial", 14), command=start_listening_thread)
 listen_button.pack(pady=10)
-
-# Stop button
-stop_button = tk.Button(root, text="Stop Listening", font=("Arial", 14), command=stop_listening_thread)
-stop_button.pack(pady=10)
 
 # Initialize the assistant and wish the user on startup
 wish()
